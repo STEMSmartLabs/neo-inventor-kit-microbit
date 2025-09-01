@@ -1,24 +1,15 @@
 
-> Open this page at [https://stemsmartlabs.github.io/neo-inventor-kit-microbit/](https://stemsmartlabs.github.io/neo-inventor-kit-microbit/)
+# Neo Inventor Kit for micro:bit
 
-## Use as Extension
+MakeCode extension for the **Neo Inventor Kit**. Adds a *Neo Inventor Kit* toolbox category with blocks for common onboard/plug-in parts:
+Servo, NeoPixel ring, Ultrasonic, Fan/DC motor, Buzzer, LED, LDR, Switch, Trimpot.  
+Includes OLED support via dependency on [`STEMSmartLabs/oled`](https://github.com/STEMSmartLabs/oled).
 
-This repository can be added as an **extension** in MakeCode.
+## Install
+- In MakeCode (micro:bit), open a project → **Extensions** → paste: `github:STEMSmartLabs/neo-inventor-kit-microbit`
 
-* open [https://makecode.microbit.org/](https://makecode.microbit.org/)
-* click on **New Project**
-* click on **Extensions** under the gearwheel menu
-* search for **https://github.com/stemsmartlabs/neo-inventor-kit-microbit** and import
+## Examples
+Open **Help → Neo Inventor Kit** after installing to browse the examples. The examples are in `docs/examples/*` and rendered automatically by MakeCode.
 
-## Edit this project
-
-To edit this repository in MakeCode.
-
-* open [https://makecode.microbit.org/](https://makecode.microbit.org/)
-* click on **Import** then click on **Import URL**
-* paste **https://github.com/stemsmartlabs/neo-inventor-kit-microbit** and click import
-
-#### Metadata (used for search, rendering)
-
-* for PXT/microbit
-<script src="https://makecode.com/gh-pages-embed.js"></script><script>makeCodeRender("{{ site.makecode.home_url }}", "{{ site.github.owner_name }}/{{ site.github.repository_name }}");</script>
+## License
+MIT
