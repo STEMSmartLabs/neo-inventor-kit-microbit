@@ -49,7 +49,7 @@ namespace neoinventor {
     export function init(): void {
         __ensureInit()
         pins.analogSetPitchPin(BUZZER_PIN)
-        pins.digitalWritePin(0)
+        pins.digitalWritePin(LED_PIN,0)
     }
 
     // ===== Servo =====
