@@ -1,16 +1,33 @@
 {
   "name": "neo-inventor-kit-microbit",
-  "version": "0.1.2",
-  "description": "Neo Inventor Kit for micro:bit — blocks for servo, NeoPixel ring, ultrasonic, fan, buzzer, OLED, and more.",
+  "version": "0.1.3",
+  "description": "Neo Inventor Kit for micro:bit — fixed-pin blocks (P2 servo, P12 NeoPixel, P7 fan, P13/P14 ultrasonic, P10 buzzer, P8 LED, P1 LDR, P3 button, P4 switch, P0 trimpot, P15 humidity) + OLED dependency.",
   "license": "MIT",
   "dependencies": {
     "core": "*",
     "neopixel": "github:microsoft/pxt-neopixel",
     "oled": "github:STEMSmartLabs/oled"
   },
-  "files": ["README.md", "main.ts"],
-  "testFiles": ["tests/test.ts"],
-  "supportedTargets": ["microbit"],
+  "files": [
+    "README.md",
+    "main.ts"
+  ],
+  "testFiles": [
+    "tests/test.ts"
+  ],
+  "supportedTargets": [
+    "microbit"
+  ],
   "preferredEditor": "blocksprj",
-  "public": true
+  "public": true,
+  "keywords": [
+    "neo inventor kit",
+    "stem smart labs",
+    "neopixel",
+    "ultrasonic",
+    "servo",
+    "buzzer",
+    "oled",
+    "microbit"
+  ]
 }
