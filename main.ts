@@ -1,5 +1,10 @@
 //% color=#FF8C00 icon="\uf135" block="Neo Inventor Kit" weight=90
 namespace neoinventor {
+
+    // Pick your kit’s fan pin here
+    const FAN_PIN: AnalogPin = AnalogPin.P7
+    
+
     //% block="set SERVO at %pin to angle %angle°"
     //% angle.min=0 angle.max=180
     //% weight=100 blockGap=12
@@ -27,12 +32,12 @@ namespace neoinventor {
         return Math.idiv(d, 58)
     }
 
-    //% block="set FAN on %pin to %percent \\%"
+    //% block="set FAN to %percent \\%"
     //% percent.min=0 percent.max=100 percent.defl=100
     //% weight=94 blockGap=12
-    export function setFan(pin: AnalogPin, percent: number): void {
+    export function setFan(percent: number): void {
         const v = Math.clamp(0, 100, percent)
-        pins.analogWritePin(pin, Math.map(v, 0, 100, 0, 1023))
+        pins.analogWritePin(FAN_PIN, Math.map(v, 0, 100, 0, 1023))
     }
 
     //% block="BUZZER on %pin play %frequency Hz for %ms ms"
