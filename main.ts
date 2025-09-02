@@ -48,7 +48,6 @@ namespace neoinventor {
     //% weight=110 blockGap=12
     export function init(): void {
         __ensureInit()
-        pins.analogSetPitchPin(BUZZER_PIN)
         pins.digitalWritePin(LED_PIN,0)
     }
 
