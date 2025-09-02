@@ -50,7 +50,6 @@ namespace neoinventor {
     //% angle.min=0 angle.max=180 angle.defl=90
     //% weight=100 blockGap=12
     export function setServoAngle(angle: number): void {
-        led.enable(false)
         pins.servoWritePin(SERVO_PIN, Math.clamp(0, 180, angle))
     }
 
@@ -63,7 +62,6 @@ namespace neoinventor {
     //% block="Neo ring"
     //% weight=98 blockGap=8
     export function ring(): neopixel.Strip {
-        led.enable(false)
         if (!__ring) __ring = neopixel.create(neoPin, neoCount, NeoPixelMode.RGB)
         return __ring
     }
@@ -72,7 +70,6 @@ namespace neoinventor {
     //% block="ring rainbow"
     //% weight=97 blockGap=12
     export function ringRainbow(): void {
-        led.enable(false)        
         ring().showRainbow(1, 360)
     }
 
@@ -94,7 +91,7 @@ namespace neoinventor {
     }
 
     // ===== Fan (PWM) =====
-    //% block="set FAN to %percent \%"
+    //% block="set FAN to %percent %%"
     //% percent.min=0 percent.max=100 percent.defl=100
     //% weight=94 blockGap=12
     export function setFan(percent: number): void {
@@ -108,7 +105,6 @@ namespace neoinventor {
     //% ms.min=1 ms.max=2000 ms.defl=500
     //% weight=92 blockGap=12
     export function buzzerTone(frequency: number, ms: number): void {
-        led.enable(false)
         pins.analogSetPitchPin(BUZZER_PIN)
         music.playTone(frequency, ms)
     }
@@ -117,7 +113,6 @@ namespace neoinventor {
     //% block="LED %on=toggleOnOff"
     //% weight=90 blockGap=12
     export function setLed(on: boolean): void {
-        led.enable(false)
         pins.digitalWritePin(LED_PIN, on ? 1 : 0)
     }
     // Helper shadow
@@ -135,7 +130,7 @@ namespace neoinventor {
 
     // ===== Humidity (analog) =====
     /**
-     * Read humidity sensor on P15 as 0–100%% (mapped from analog 0–1023).
+     * Read humidity sensor on P15 as 0–100% (mapped from analog 0–1023).
      * If you use a DHT11/22 module, prefer a dedicated DHT extension.
      */
     //% block="humidity percent"
@@ -149,7 +144,6 @@ namespace neoinventor {
     //% block="button pressed"
     //% weight=84 blockGap=12
     export function isButtonPressed(): boolean {
-        led.enable(false)
         pins.setPull(BUTTON_PIN, PinPullMode.PullUp)
         return pins.digitalReadPin(BUTTON_PIN) == 0
     }
@@ -158,7 +152,6 @@ namespace neoinventor {
     //% block="switch on"
     //% weight=82 blockGap=12
     export function isSwitchOn(): boolean {
-        led.enable(false)        
         pins.setPull(SWITCH_PIN, PinPullMode.PullUp)
         return pins.digitalReadPin(SWITCH_PIN) == 0
     }
@@ -167,7 +160,6 @@ namespace neoinventor {
     //% block="trimpot percent"
     //% weight=80 blockGap=12
     export function readTrimpotPercent(): number {
-        led.enable(false)        
         const v = pins.analogReadPin(TRIMPOT_PIN)
         return Math.map(v, 0, 1023, 0, 100)
     }
@@ -198,7 +190,6 @@ namespace neoinventor {
     }
     //% blockHidden=true
     export function setFanOnPin(pin: AnalogPin, percent: number): void {
-        led.enable(false)
         const v = Math.clamp(0, 100, percent)
         pins.analogWritePin(pin, Math.map(v, 0, 100, 0, 1023))
     }
