@@ -3,13 +3,15 @@ namespace neoinventor {
 
     // Pick your kit’s fan pin here
     const FAN_PIN: AnalogPin = AnalogPin.P7
+    const SERVO_PIN: AnalogPin = AnalogPin.P2
     
 
-    //% block="set SERVO at %pin to angle %angle°"
+    //% block="set SERVO angle to %angle°"
     //% angle.min=0 angle.max=180
     //% weight=100 blockGap=12
-    export function setServoAngle(pin: AnalogPin, angle: number): void {
-        pins.servoWritePin(pin, Math.max(0, Math.min(180, angle)))
+    export function setServoAngle(angle: number): void {
+        led.enable(false)
+        pins.servoWritePin(SERVO_PIN, Math.max(0, Math.min(180, angle)))
     }
 
     //% block="create NeoPixel on %pin with %num LEDs"
@@ -32,7 +34,7 @@ namespace neoinventor {
         return Math.idiv(d, 58)
     }
 
-    //% block="set FAN to %percent \\%"
+    //% block="set FAN Speed to %percent \\%"
     //% percent.min=0 percent.max=100 percent.defl=100
     //% weight=94 blockGap=12
     export function setFan(percent: number): void {
