@@ -1,12 +1,14 @@
 
-// Neo Inventor Kit — fixed pin mapping for peripherals
+// Neo Inventor Kit — fixed pin mapping with auto-init (disables LED matrix)
+// Calling any public block will ensure led.enable(false) is run exactly once.
+
 // Pins (per your board):
 // P2: Servo
 // P12: NeoPixel ring
 // P7: Fan (PWM)
-// P15: Humidity (analog)  — if you use DHT11/22, prefer a DHT extension instead
+// P15: Humidity (analog)
 // P8: LED
-// P9: IR receiver (raw level only here)
+// P9: IR receiver
 // P1: LDR (analog)
 // Trig P13, Echo P14: Ultrasonic
 // P10: Buzzer (tone)
@@ -16,6 +18,15 @@
 
 //% color=#FF8C00 icon="\uf135" block="Neo Inventor Kit" weight=90
 namespace neoinventor {
+    // ===== One-time init (disable 5x5 LED matrix so P4, P7, P9, P10 are free) =====
+    let __inited = false
+    function __ensureInit(): void {
+        if (__inited) return
+        __inited = true
+        led.enable(false)
+        // You can add more one-time setup here if needed.
+    }
+
     // ===== Fixed mapping =====
     const SERVO_PIN: AnalogPin = AnalogPin.P2
     const NEO_PIN: DigitalPin = DigitalPin.P12
@@ -32,24 +43,21 @@ namespace neoinventor {
     const TRIMPOT_PIN: AnalogPin = AnalogPin.P0
     const SWITCH_PIN: DigitalPin = DigitalPin.P4
 
-    // Optional: advanced overrides (hidden in toolbox)
-    //% blockHidden=true
-    export function __overrideNeoCount(n: number) { (n>0) && (neoCount = n) }
-    //% blockHidden=true
-    export function __overrideNeoPin(p: DigitalPin) { neoPin = p }
-    //% blockHidden=true
-    export function __overrideFanPin(p: AnalogPin) { fanPin = p }
-
-    // Use mutable backing fields to allow advanced overrides
-    let neoPin = NEO_PIN
-    let neoCount = NEO_COUNT
-    let fanPin = FAN_PIN
+    // ===== Optional: a visible "Initialize kit" block =====
+    //% block="initialize Neo Inventor Kit"
+    //% weight=110 blockGap=12
+    export function init(): void {
+        __ensureInit()
+        pins.analogSetPitchPin(BUZZER_PIN)
+        pins.digitalWritePin(0)
+    }
 
     // ===== Servo =====
     //% block="set SERVO angle %angle°"
     //% angle.min=0 angle.max=180 angle.defl=90
     //% weight=100 blockGap=12
     export function setServoAngle(angle: number): void {
+        __ensureInit()
         pins.servoWritePin(SERVO_PIN, Math.clamp(0, 180, angle))
     }
 
@@ -62,7 +70,8 @@ namespace neoinventor {
     //% block="Neo ring"
     //% weight=98 blockGap=8
     export function ring(): neopixel.Strip {
-        if (!__ring) __ring = neopixel.create(neoPin, neoCount, NeoPixelMode.RGB)
+        __ensureInit()
+        if (!__ring) __ring = neopixel.create(NEO_PIN, NEO_COUNT, NeoPixelMode.RGB)
         return __ring
     }
 
@@ -70,6 +79,7 @@ namespace neoinventor {
     //% block="ring rainbow"
     //% weight=97 blockGap=12
     export function ringRainbow(): void {
+        __ensureInit()
         ring().showRainbow(1, 360)
     }
 
@@ -80,6 +90,7 @@ namespace neoinventor {
     //% block="ultrasonic distance (cm)"
     //% weight=96 blockGap=12
     export function ultrasonicCm(): number {
+        __ensureInit()
         pins.setPull(ULTRA_TRIG, PinPullMode.PullNone)
         pins.digitalWritePin(ULTRA_TRIG, 0)
         control.waitMicros(2)
@@ -95,8 +106,9 @@ namespace neoinventor {
     //% percent.min=0 percent.max=100 percent.defl=100
     //% weight=94 blockGap=12
     export function setFan(percent: number): void {
+        __ensureInit()
         const v = Math.clamp(0, 100, percent)
-        pins.analogWritePin(fanPin, Math.map(v, 0, 100, 0, 1023))
+        pins.analogWritePin(FAN_PIN, Math.map(v, 0, 100, 0, 1023))
     }
 
     // ===== Buzzer (tone) =====
@@ -105,6 +117,7 @@ namespace neoinventor {
     //% ms.min=1 ms.max=2000 ms.defl=500
     //% weight=92 blockGap=12
     export function buzzerTone(frequency: number, ms: number): void {
+        __ensureInit()
         pins.analogSetPitchPin(BUZZER_PIN)
         music.playTone(frequency, ms)
     }
@@ -113,6 +126,7 @@ namespace neoinventor {
     //% block="LED %on=toggleOnOff"
     //% weight=90 blockGap=12
     export function setLed(on: boolean): void {
+        __ensureInit()
         pins.digitalWritePin(LED_PIN, on ? 1 : 0)
     }
     // Helper shadow
@@ -125,6 +139,7 @@ namespace neoinventor {
     //% block="LDR (0–1023)"
     //% weight=88 blockGap=12
     export function readLDR(): number {
+        __ensureInit()
         return pins.analogReadPin(LDR_PIN)
     }
 
@@ -136,6 +151,7 @@ namespace neoinventor {
     //% block="humidity percent"
     //% weight=86 blockGap=12
     export function readHumidityPercent(): number {
+        __ensureInit()
         const v = pins.analogReadPin(HUMIDITY_PIN) // 0..1023
         return Math.clamp(0, 100, Math.map(v, 0, 1023, 0, 100))
     }
@@ -144,6 +160,7 @@ namespace neoinventor {
     //% block="button pressed"
     //% weight=84 blockGap=12
     export function isButtonPressed(): boolean {
+        __ensureInit()
         pins.setPull(BUTTON_PIN, PinPullMode.PullUp)
         return pins.digitalReadPin(BUTTON_PIN) == 0
     }
@@ -152,6 +169,7 @@ namespace neoinventor {
     //% block="switch on"
     //% weight=82 blockGap=12
     export function isSwitchOn(): boolean {
+        __ensureInit()
         pins.setPull(SWITCH_PIN, PinPullMode.PullUp)
         return pins.digitalReadPin(SWITCH_PIN) == 0
     }
@@ -160,6 +178,7 @@ namespace neoinventor {
     //% block="trimpot percent"
     //% weight=80 blockGap=12
     export function readTrimpotPercent(): number {
+        __ensureInit()
         const v = pins.analogReadPin(TRIMPOT_PIN)
         return Math.map(v, 0, 1023, 0, 100)
     }
@@ -168,11 +187,11 @@ namespace neoinventor {
     //% block="IR level"
     //% weight=70 blockGap=12
     export function irLevel(): number {
+        __ensureInit()
         return pins.digitalReadPin(IR_PIN)
     }
 
     // ===== Legacy pin-parameter APIs (hidden) =====
-    // Keeping these allows old projects to compile if they used the earlier API.
     //% blockHidden=true
     export function setServoAngleOn(pin: AnalogPin, angle: number): void {
         pins.servoWritePin(pin, Math.clamp(0, 180, angle))
