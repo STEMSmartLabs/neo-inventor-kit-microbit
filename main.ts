@@ -32,7 +32,7 @@ namespace neoinventor {
     const NEO_PIN: DigitalPin = DigitalPin.P12
     const NEO_COUNT: number = 16   // change if your ring has different LED count
     const FAN_PIN: AnalogPin = AnalogPin.P7
-    const HUMIDITY_PIN: AnalogPin = AnalogPin.P15
+    const DHT_PIN: DigitalPin = DigitalPin.P15
     const LED_PIN: DigitalPin = DigitalPin.P8
     const IR_PIN: DigitalPin = DigitalPin.P9
     const LDR_PIN: AnalogPin = AnalogPin.P1
@@ -144,17 +144,89 @@ namespace neoinventor {
         return pins.analogReadPin(LDR_PIN)
     }
 
-    // ===== Humidity (analog) =====
+    // ===== Humidity  =====
+
+    // Timing helper: enforce ~1.1s between reads
+    let __dhtLast = 0
+    function __dhtEnsureInterval(): void {
+        const since = input.runningTime() - __dhtLast
+        const wait = 1100 - since
+        if (wait > 0) basic.pause(wait)
+        __dhtLast = input.runningTime()
+    }
+
     /**
-     * Read humidity sensor on P15 as 0–100% (mapped from analog 0–1023).
-     * If you use a DHT11/22 module, prefer a dedicated DHT extension.
+     * Read 5 raw bytes from DHT11 on P15.
+     * Returns [humInt, humDec, tempInt, tempDec, checksum] or [-1,...] on error.
      */
-    //% block="humidity percent"
-    //% weight=86 blockGap=12
-    export function readHumidityPercent(): number {
+    //% blockHidden=true
+    export function __dht11ReadRawBytes(): number[] {
         __ensureInit()
-        const v = pins.analogReadPin(HUMIDITY_PIN) // 0..1023
-        return Math.clamp(0, 100, Math.map(v, 0, 1023, 0, 100))
+        __dhtEnsureInterval()
+
+        const pin = DHT_PIN
+        let data = [0, 0, 0, 0, 0]
+
+        // Start signal: pull low ≥18ms, then release and wait ~20-40us
+        pins.setPull(pin, PinPullMode.PullUp)
+        pins.digitalWritePin(pin, 0)
+        basic.pause(18)
+        pins.digitalWritePin(pin, 1)
+        control.waitMicros(40)
+
+        // Sensor response: ~80us low + ~80us high
+        if (pins.pulseIn(pin, PulseValue.Low, 100000) == 0) return [-1,-1,-1,-1,-1]
+        if (pins.pulseIn(pin, PulseValue.High, 100000) == 0) return [-1,-1,-1,-1,-1]
+
+        // Read 40 bits: 50us low + (26-28us high = 0) or (~70us high = 1)
+        for (let i = 0; i < 40; i++) {
+            if (pins.pulseIn(pin, PulseValue.Low, 100000) == 0) return [-1,-1,-1,-1,-1]
+            const hi = pins.pulseIn(pin, PulseValue.High, 100000)
+            if (hi == 0) return [-1,-1,-1,-1,-1]
+            const bit = hi > 40 ? 1 : 0  // threshold ~40us
+            const byteIndex = Math.idiv(i, 8)
+            data[byteIndex] = (data[byteIndex] << 1) | bit
+        }
+
+        // Verify checksum
+        const sum = (data[0] + data[1] + data[2] + data[3]) & 0xFF
+        if (sum != data[4]) return [-1,-1,-1,-1,-1]
+
+        return data
+    }
+
+    export enum Dht11Part {
+        //% block="humidity integer"
+        HumidityInteger = 0,
+        //% block="humidity decimal"
+        HumidityDecimal = 1,
+        //% block="temperature integer"
+        TemperatureInteger = 2,
+        //% block="temperature decimal"
+        TemperatureDecimal = 3,
+        //% block="checksum"
+        Checksum = 4
+    }
+
+    //% block="DHT11 raw %part"
+    //% weight=79 blockGap=8
+    export function dht11Raw(part: Dht11Part): number {
+        const d = __dht11ReadRawBytes()
+        return d[0] < 0 ? -1 : d[part]
+    }
+
+    //% block="DHT11 temperature (°C)"
+    //% weight=77 blockGap=8
+    export function dht11TemperatureC(): number {
+        const d = __dht11ReadRawBytes()
+        return d[0] < 0 ? -999 : (d[2] + d[3] / 10)
+    }
+
+    //% block="DHT11 humidity (%%)"
+    //% weight=75 blockGap=12
+    export function dht11HumidityPercent(): number {
+        const d = __dht11ReadRawBytes()
+        return d[0] < 0 ? -999 : (d[0] + d[1] / 10)
     }
 
     // ===== Button (active-low) =====
@@ -209,7 +281,7 @@ namespace neoinventor {
         const d = pins.pulseIn(echo, PulseValue.High, 25000)
         return Math.idiv(d, 58)
     }
-    
+
     //% blockHidden=true
     export function setFanOnPin(pin: AnalogPin, percent: number): void {
         const v = Math.clamp(0, 100, percent)

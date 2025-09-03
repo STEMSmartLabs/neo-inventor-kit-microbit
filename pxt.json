@@ -6,8 +6,7 @@
   "dependencies": {
     "core": "*",
     "neopixel": "github:microsoft/pxt-neopixel",
-    "oled": "github:STEMSmartLabs/oled",
-    "OLED12864_I2C": "github:makecode-extensions/oled12864_i2c"    
+    "OLED12864_I2C": "github:makecode-extensions/oled12864_i2c"
   },
   "files": [
     "README.md",
