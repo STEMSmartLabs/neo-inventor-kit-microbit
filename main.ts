@@ -146,7 +146,8 @@ namespace neoinventor {
 
     // ===== Humidity  =====
 
-    // Enforce ≥1.1s between reads (DHT11 requirement)
+        // --- DHT11 (no library) on fixed P15 ---
+    // throttle: ≥1.1s between reads
     let __dhtLast = 0
     function __dhtEnsureInterval(): void {
         const since = input.runningTime() - __dhtLast
@@ -161,82 +162,58 @@ namespace neoinventor {
      */
     //% blockHidden=true
     export function __dht11ReadRawBytes(): number[] {
-        __ensureInit()
+        __ensureInit()                 // your one-time init (LED off, etc.)
         __dhtEnsureInterval()
 
-        const pin = DHT_PIN
         let data = [0, 0, 0, 0, 0]
 
-        // 1) Start signal: drive LOW ≥18ms
-        pins.digitalWritePin(pin, 0)
+        // 1) Idle high (pull-up)
+        pins.setPull(DHT_PIN, PinPullMode.PullUp)
+
+        // 2) Start: drive LOW ≥18ms to wake DHT11
+        pins.digitalWritePin(DHT_PIN, 0)
         basic.pause(18)
 
-        // 2) Release to INPUT with pull-up so sensor can drive the line
-        pins.setPull(pin, PinPullMode.PullUp)
+        // 3) Release HIGH for ~30µs while still output
+        pins.digitalWritePin(DHT_PIN, 1)
         control.waitMicros(30)
-        pins.digitalReadPin(pin) // ensure input mode
 
-        // 3) Sensor response: ~80us LOW, then ~80us HIGH
-        if (pins.pulseIn(pin, PulseValue.Low, 120000) == 0) return [-1,-1,-1,-1,-1]
-        if (pins.pulseIn(pin, PulseValue.High, 120000) == 0) return [-1,-1,-1,-1,-1]
+        // 4) Switch to INPUT with pull-up so the sensor can drive the line
+        pins.setPull(DHT_PIN, PinPullMode.PullUp)
+        pins.digitalReadPin(DHT_PIN) // ensure input mode
 
-        // 4) Read 40 bits: 50us LOW + (≈26–28us HIGH=0) or (≈70us HIGH=1)
+        // 5) Sensor response: ~80µs LOW, then ~80µs HIGH
+        if (pins.pulseIn(DHT_PIN, PulseValue.Low, 120000) == 0) return [-1,-1,-1,-1,-1]
+        if (pins.pulseIn(DHT_PIN, PulseValue.High, 120000) == 0) return [-1,-1,-1,-1,-1]
+
+        // 6) Read 40 bits: 50µs LOW + (≈26–28µs HIGH = 0) or (≈70µs HIGH = 1)
         for (let i = 0; i < 40; i++) {
-            if (pins.pulseIn(pin, PulseValue.Low, 120000) == 0) return [-1,-1,-1,-1,-1]
-            const hi = pins.pulseIn(pin, PulseValue.High, 120000)
+            if (pins.pulseIn(DHT_PIN, PulseValue.Low, 120000) == 0) return [-1,-1,-1,-1,-1]
+            const hi = pins.pulseIn(DHT_PIN, PulseValue.High, 120000)
             if (hi == 0) return [-1,-1,-1,-1,-1]
-            const bit = hi > 50 ? 1 : 0 // 50us threshold works well on micro:bit
+            const bit = hi > 45 ? 1 : 0   // ~45µs threshold works well on micro:bit
             const byteIndex = Math.idiv(i, 8)
             data[byteIndex] = (data[byteIndex] << 1) | bit
         }
 
-        // 5) Checksum
+        // 7) Checksum
         const sum = (data[0] + data[1] + data[2] + data[3]) & 0xFF
         if (sum != data[4]) return [-1,-1,-1,-1,-1]
 
         return data
     }
 
-    export enum Dht11Part {
-        //% block="humidity integer"
-        HumidityInteger = 0,
-        //% block="humidity decimal"
-        HumidityDecimal = 1,
-        //% block="temperature integer"
-        TemperatureInteger = 2,
-        //% block="temperature decimal"
-        TemperatureDecimal = 3,
-        //% block="checksum"
-        Checksum = 4
-    }
-
-    //% block="DHT11 raw %part"
-    //% weight=79 blockGap=8
-    export function dht11Raw(part: Dht11Part): number {
-        const d = __dht11ReadRawBytes()
-        return d[0] < 0 ? -1 : d[part]
-    }
-
+    // Convenience wrappers
     //% block="DHT11 temperature (°C)"
-    //% weight=77 blockGap=8
     export function dht11TemperatureC(): number {
         const d = __dht11ReadRawBytes()
         return d[0] < 0 ? -999 : (d[2] + d[3] / 10)
     }
 
     //% block="DHT11 humidity (%%)"
-    //% weight=75 blockGap=12
     export function dht11HumidityPercent(): number {
         const d = __dht11ReadRawBytes()
         return d[0] < 0 ? -999 : (d[0] + d[1] / 10)
-    }
-
-    // Optional convenience
-    //% block="DHT11 temperature (°F)"
-    //% weight=74 blockGap=12
-    export function dht11TemperatureF(): number {
-        const c = dht11TemperatureC()
-        return c <= -900 ? c : (c * 9 / 5 + 32)
     }
 
     // ===== Button (active-low) =====
