@@ -48,6 +48,8 @@ namespace neoinventor {
     //% weight=110 blockGap=12
     export function init(): void {
         __ensureInit()
+        OLED12864_I2C.init(60)             // 60=0x3C; use 61 for 0x3D panels
+        OLED12864_I2C.clear()        
         pins.digitalWritePin(LED_PIN,0)
     }
 
@@ -195,6 +197,7 @@ namespace neoinventor {
     export function setServoAngleOn(pin: AnalogPin, angle: number): void {
         pins.servoWritePin(pin, Math.clamp(0, 180, angle))
     }
+
     //% blockHidden=true
     export function ultrasonicCmOn(trig: DigitalPin, echo: DigitalPin): number {
         pins.setPull(trig, PinPullMode.PullNone)
@@ -206,9 +209,54 @@ namespace neoinventor {
         const d = pins.pulseIn(echo, PulseValue.High, 25000)
         return Math.idiv(d, 58)
     }
+    
     //% blockHidden=true
     export function setFanOnPin(pin: AnalogPin, percent: number): void {
         const v = Math.clamp(0, 100, percent)
         pins.analogWritePin(pin, Math.map(v, 0, 100, 0, 1023))
+    }
+
+    //% block="OLED clear"
+    //% weight=78 blockGap=8
+    export function oledClear(): void {
+        __ensureInit()
+        OLED12864_I2C.clear()
+    }
+
+    //% block="OLED show text %text at col %col row %row"
+    //% col.min=0 col.max=23 row.min=0 row.max=7
+    //% weight=76 blockGap=8
+    export function oledShowText(text: string, col: number, row: number): void {
+        __ensureInit()
+        OLED12864_I2C.showString(col, row, text, 1)
+    }
+
+    //% block="OLED show number %value at col %col row %row"
+    //% col.min=0 col.max=23 row.min=0 row.max=7
+    //% weight=74 blockGap=8
+    export function oledShowNumber(value: number, col: number, row: number): void {
+        __ensureInit()
+        OLED12864_I2C.showNumber(col, row, value, 1)
+    }
+
+    //% block="OLED set zoom %on" on.shadow=toggleOnOff
+    //% weight=72 blockGap=8
+    export function oledZoom(on: boolean): void {
+        __ensureInit()
+        OLED12864_I2C.zoom(on)
+    }
+
+    //% block="OLED invert %on" on.shadow=toggleOnOff
+    //% weight=70 blockGap=8
+    export function oledInvert(on: boolean): void {
+        __ensureInit()
+        OLED12864_I2C.invert(on)
+    }
+
+    //% block="OLED draw rect x1 %x1 y1 %y1 x2 %x2 y2 %y2"
+    //% weight=68 blockGap=8
+    export function oledRect(x1: number, y1: number, x2: number, y2: number): void {
+        __ensureInit()
+        OLED12864_I2C.rect(x1, y1, x2, y2, 1)
     }
 }
