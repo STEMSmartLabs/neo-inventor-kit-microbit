@@ -146,7 +146,7 @@ namespace neoinventor {
 
     // ===== Humidity  =====
 
-    // Timing helper: enforce ~1.1s between reads
+    // Enforce ≥1.1s between reads (DHT11 requirement)
     let __dhtLast = 0
     function __dhtEnsureInterval(): void {
         const since = input.runningTime() - __dhtLast
@@ -167,28 +167,30 @@ namespace neoinventor {
         const pin = DHT_PIN
         let data = [0, 0, 0, 0, 0]
 
-        // Start signal: pull low ≥18ms, then release and wait ~20-40us
-        pins.setPull(pin, PinPullMode.PullUp)
+        // 1) Start signal: drive LOW ≥18ms
         pins.digitalWritePin(pin, 0)
         basic.pause(18)
-        pins.digitalWritePin(pin, 1)
-        control.waitMicros(40)
 
-        // Sensor response: ~80us low + ~80us high
-        if (pins.pulseIn(pin, PulseValue.Low, 100000) == 0) return [-1,-1,-1,-1,-1]
-        if (pins.pulseIn(pin, PulseValue.High, 100000) == 0) return [-1,-1,-1,-1,-1]
+        // 2) Release to INPUT with pull-up so sensor can drive the line
+        pins.setPull(pin, PinPullMode.PullUp)
+        control.waitMicros(30)
+        pins.digitalReadPin(pin) // ensure input mode
 
-        // Read 40 bits: 50us low + (26-28us high = 0) or (~70us high = 1)
+        // 3) Sensor response: ~80us LOW, then ~80us HIGH
+        if (pins.pulseIn(pin, PulseValue.Low, 120000) == 0) return [-1,-1,-1,-1,-1]
+        if (pins.pulseIn(pin, PulseValue.High, 120000) == 0) return [-1,-1,-1,-1,-1]
+
+        // 4) Read 40 bits: 50us LOW + (≈26–28us HIGH=0) or (≈70us HIGH=1)
         for (let i = 0; i < 40; i++) {
-            if (pins.pulseIn(pin, PulseValue.Low, 100000) == 0) return [-1,-1,-1,-1,-1]
-            const hi = pins.pulseIn(pin, PulseValue.High, 100000)
+            if (pins.pulseIn(pin, PulseValue.Low, 120000) == 0) return [-1,-1,-1,-1,-1]
+            const hi = pins.pulseIn(pin, PulseValue.High, 120000)
             if (hi == 0) return [-1,-1,-1,-1,-1]
-            const bit = hi > 40 ? 1 : 0  // threshold ~40us
+            const bit = hi > 50 ? 1 : 0 // 50us threshold works well on micro:bit
             const byteIndex = Math.idiv(i, 8)
             data[byteIndex] = (data[byteIndex] << 1) | bit
         }
 
-        // Verify checksum
+        // 5) Checksum
         const sum = (data[0] + data[1] + data[2] + data[3]) & 0xFF
         if (sum != data[4]) return [-1,-1,-1,-1,-1]
 
@@ -227,6 +229,14 @@ namespace neoinventor {
     export function dht11HumidityPercent(): number {
         const d = __dht11ReadRawBytes()
         return d[0] < 0 ? -999 : (d[0] + d[1] / 10)
+    }
+
+    // Optional convenience
+    //% block="DHT11 temperature (°F)"
+    //% weight=74 blockGap=12
+    export function dht11TemperatureF(): number {
+        const c = dht11TemperatureC()
+        return c <= -900 ? c : (c * 9 / 5 + 32)
     }
 
     // ===== Button (active-low) =====
