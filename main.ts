@@ -16,7 +16,7 @@
 // P0: Trimpot (analog)
 // P4: On/Off switch (active-low w/ pull-up)
 
-//% color=#FF8C00 icon="\uf135" block="Neo Inventor Kit" weight=90
+//% color=#0B5394 icon="\uf135" block="Neo Inventor Kit" weight=90
 namespace neoinventor {
     // ===== One-time init (disable 5x5 LED matrix so P4, P7, P9, P10 are free) =====
     let __inited = false
