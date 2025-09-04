@@ -1,183 +1,100 @@
+// dht11.ts — DHT11 (no external library), fixed to P15
+// Adds DHT11 temperature/humidity blocks under the "Neo Inventor Kit" category
+// by using the same `namespace neoinventor` as your main.ts.
+
 namespace neoinventor {
+    // Fixed data pin for your kit
+    const DHT_PIN: DigitalPin = DigitalPin.P15
+
+    // Throttle reads: DHT11 requires ≥1s between queries
+    let __dhtLast = 0
+    function __dhtEnsureInterval(): void {
+        const since = input.runningTime() - __dhtLast
+        const wait = 1100 - since
+        if (wait > 0) basic.pause(wait)
+        __dhtLast = input.runningTime()
+    }
+
     /**
-     * MakeCode editor extension for DHT11 and DHT22 humidity/temperature sensors
-     * by Alan Wang
+     * Low-level DHT11 read: returns 5 raw bytes or [-1,...] on error.
+     * Order: [humInt, humDec, tempInt, tempDec, checksum]
      */
+    //% blockHidden=true
+    export function __dht11ReadRawBytes(): number[] {
+        __dhtEnsureInterval()
 
-    enum DHTtype {
-        //% block="DHT11"
-        DHT11,
-        //% block="DHT22"
-        DHT22,
+        const pin = DHT_PIN
+        let data = [0, 0, 0, 0, 0]
+
+        // 1) Idle high via pull-up
+        pins.setPull(pin, PinPullMode.PullUp)
+
+        // 2) Start signal: drive LOW ≥18ms to wake DHT11
+        pins.digitalWritePin(pin, 0)
+        basic.pause(20)
+
+        // 3) Release HIGH for ~30µs while still output
+        pins.digitalWritePin(pin, 1)
+        control.waitMicros(30)
+
+        // 4) Switch to INPUT so sensor can drive the line
+        pins.setPull(pin, PinPullMode.PullUp)
+        pins.digitalReadPin(pin) // ensure input mode
+
+        // 5) Sensor response: ~80µs LOW, then ~80µs HIGH
+        if (pins.pulseIn(pin, PulseValue.Low, 150000) == 0) return [-1,-1,-1,-1,-1]
+        if (pins.pulseIn(pin, PulseValue.High, 150000) == 0) return [-1,-1,-1,-1,-1]
+
+        // 6) Read 40 bits: 50µs LOW + (≈26–28µs HIGH = 0) or (≈70µs HIGH = 1)
+        for (let i = 0; i < 40; i++) {
+            if (pins.pulseIn(pin, PulseValue.Low, 150000) == 0) return [-1,-1,-1,-1,-1]
+            const hi = pins.pulseIn(pin, PulseValue.High, 150000)
+            if (hi == 0) return [-1,-1,-1,-1,-1]
+            const bit = hi > 48 ? 1 : 0 // ~48µs threshold works well on micro:bit
+            const byteIndex = Math.idiv(i, 8)
+            data[byteIndex] = (data[byteIndex] << 1) | bit
+        }
+
+        // 7) Verify checksum (sum of first 4 bytes, LSB)
+        const sum = (data[0] + data[1] + data[2] + data[3]) & 0xFF
+        if (sum != data[4]) return [-1,-1,-1,-1,-1]
+
+        return data
     }
 
-    enum dataType {
-        //% block="humidity"
-        humidity,
-        //% block="temperature"
-        temperature,
+    // ========== Friendly blocks ==========
+
+    //% block="DHT11 temperature (°C)"
+    //% weight=77 blockGap=8
+    export function dht11TemperatureC(): number {
+        const d = __dht11ReadRawBytes()
+        return d[0] < 0 ? -999 : (d[2] + d[3] / 10)
     }
 
-    enum tempType {
-        //% block="Celsius (*C)"
-        celsius,
-        //% block="Fahrenheit (*F)"
-        fahrenheit,
+    //% block="DHT11 humidity (%%)"
+    //% weight=75 blockGap=12
+    export function dht11HumidityPercent(): number {
+        const d = __dht11ReadRawBytes()
+        return d[0] < 0 ? -999 : (d[0] + d[1] / 10)
     }
 
-    //% block="DHT11/DHT22" weight=100 color=#ff8f3f icon="\uf043"
-    namespace dht11_dht22 {
+    export enum Dht11Part {
+        //% block="humidity integer"
+        HumidityInteger = 0,
+        //% block="humidity decimal"
+        HumidityDecimal = 1,
+        //% block="temperature integer"
+        TemperatureInteger = 2,
+        //% block="temperature decimal"
+        TemperatureDecimal = 3,
+        //% block="checksum"
+        Checksum = 4
+    }
 
-        let _temperature: number = -999.0
-        let _humidity: number = -999.0
-        let _temptype: tempType = tempType.celsius
-        let _readSuccessful: boolean = false
-        let _sensorresponding: boolean = false
-
-        /**
-        * Query data from DHT11/DHT22 sensor. If you are using 4 pins/no PCB board versions, you'll need to pull up the data pin. 
-        * It is also recommended to wait 1 (DHT11) or 2 (DHT22) seconds between each query.
-        */
-        //% block="Query $DHT|Data pin $dataPin|Pin pull up $pullUp|Serial output $serialOtput|Wait 2 sec after query $wait"
-        //% pullUp.defl=true
-        //% serialOtput.defl=false
-        //% wait.defl=true
-        //% blockExternalInputs=true
-        export function queryData(DHT: DHTtype, dataPin: DigitalPin, pullUp: boolean, serialOtput: boolean, wait: boolean) {
-
-            //initialize
-            let startTime: number = 0
-            let endTime: number = 0
-            let checksum: number = 0
-            let checksumTmp: number = 0
-            let dataArray: boolean[] = []
-            let resultArray: number[] = []
-            let DHTstr: string = (DHT == DHTtype.DHT11) ? "DHT11" : "DHT22"
-
-            for (let index = 0; index < 40; index++) dataArray.push(false)
-            for (let index = 0; index < 5; index++) resultArray.push(0)
-
-            _humidity = -999.0
-            _temperature = -999.0
-            _readSuccessful = false
-            _sensorresponding = false
-            startTime = input.runningTimeMicros()
-
-            //request data
-            pins.digitalWritePin(dataPin, 0) //begin protocol, pull down pin
-            basic.pause(18)
-        
-            if (pullUp) pins.setPull(dataPin, PinPullMode.PullUp) //pull up data pin if needed
-            pins.digitalReadPin(dataPin) //pull up pin
-            control.waitMicros(40)
-        
-            if (pins.digitalReadPin(dataPin) == 1) {
-                if (serialOtput) {
-                    serial.writeLine(DHTstr + " not responding!")
-                    serial.writeLine("----------------------------------------")
-                }
-
-            } else {
-
-                _sensorresponding = true
-
-                while (pins.digitalReadPin(dataPin) == 0); //sensor response
-                while (pins.digitalReadPin(dataPin) == 1); //sensor response
-
-                //read data (5 bytes)
-                for (let index = 0; index < 40; index++) {
-                    while (pins.digitalReadPin(dataPin) == 1);
-                    while (pins.digitalReadPin(dataPin) == 0);
-                    control.waitMicros(28)
-                    //if sensor still pull up data pin after 28 us it means 1, otherwise 0
-                    if (pins.digitalReadPin(dataPin) == 1) dataArray[index] = true
-                }
-
-                endTime = input.runningTimeMicros()
-
-                //convert byte number array to integer
-                for (let index = 0; index < 5; index++)
-                    for (let index2 = 0; index2 < 8; index2++)
-                        if (dataArray[8 * index + index2]) resultArray[index] += 2 ** (7 - index2)
-
-                //verify checksum
-                checksumTmp = resultArray[0] + resultArray[1] + resultArray[2] + resultArray[3]
-                checksum = resultArray[4]
-                if (checksumTmp >= 512) checksumTmp -= 512
-                if (checksumTmp >= 256) checksumTmp -= 256
-                if (checksum == checksumTmp) _readSuccessful = true
-
-                //read data if checksum ok
-                if (_readSuccessful) {
-                    if (DHT == DHTtype.DHT11) {
-                        //DHT11
-                        _humidity = resultArray[0] + resultArray[1] / 100
-                        _temperature = resultArray[2] + resultArray[3] / 100
-                    } else {
-                        //DHT22
-                        let temp_sign: number = 1
-                        if (resultArray[2] >= 128) {
-                            resultArray[2] -= 128
-                            temp_sign = -1
-                        }
-                        _humidity = (resultArray[0] * 256 + resultArray[1]) / 10
-                        _temperature = (resultArray[2] * 256 + resultArray[3]) / 10 * temp_sign
-                    }
-                    if (_temptype == tempType.fahrenheit)
-                        _temperature = _temperature * 9 / 5 + 32
-                }
-
-                //serial output
-                if (serialOtput) {
-                    serial.writeLine(DHTstr + " query completed in " + (endTime - startTime) + " microseconds")
-                    if (_readSuccessful) {
-                        serial.writeLine("Checksum ok")
-                        serial.writeLine("Humidity: " + _humidity + " %")
-                        serial.writeLine("Temperature: " + _temperature + (_temptype == tempType.celsius ? " *C" : " *F"))
-                    } else {
-                        serial.writeLine("Checksum error")
-                    }
-                    serial.writeLine("----------------------------------------")
-                }
-
-            }
-
-            //wait 2 sec after query if needed
-            if (wait) basic.pause(2000)
-
-        }
-
-        /**
-        * Read humidity/temperature data from lastest query of DHT11/DHT22
-        */
-        //% block="Read $data"
-        export function readData(data: dataType): number {
-            return data == dataType.humidity ? _humidity : _temperature
-        }
-
-        /**
-        * Select temperature type (Celsius/Fahrenheit)"
-        */
-        //% block="Temperature type: $temp" advanced=true
-        export function selectTempType(temp: tempType) {
-            _temptype = temp
-        }
-
-        /**
-        * Determind if last query is successful (checksum ok)
-        */
-        //% block="Last query successful?"
-        export function readDataSuccessful(): boolean {
-            return _readSuccessful
-        }
-
-        /**
-        * Determind if sensor responded successfully (not disconnected, etc) in last query
-        */
-        //% block="Last query sensor responding?" advanced=true
-        export function sensorrResponding(): boolean {
-            return _sensorresponding
-        }
-
+    //% block="DHT11 raw %part"
+    //% weight=73 blockGap=8
+    export function dht11Raw(part: Dht11Part): number {
+        const d = __dht11ReadRawBytes()
+        return d[0] < 0 ? -1 : d[part]
     }
 }
