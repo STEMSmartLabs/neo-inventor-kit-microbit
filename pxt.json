@@ -10,7 +10,8 @@
   },
   "files": [
     "README.md",
-    "main.ts"
+    "main.ts",
+    "dht11.ts"
   ],
   "testFiles": [
     "tests/test.ts"
