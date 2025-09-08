@@ -13,7 +13,6 @@ namespace neoinventor {
       Humidity = 2
     }
 
-    const DHT_PIN: DigitalPin = DigitalPin.P15
     let dht11Humidity = 0;
     let dht11Temperature = 0;
 
@@ -24,7 +23,7 @@ namespace neoinventor {
     //% block="Temp & Humidity  %valueType"
     //% tooltip="Reads the temperature or humidity from a DHT11 sensor"
       export function dht11value(valueType: DHT11Type): number {
-      const DigitalPin pin = DHT_PIN;  
+      const pin = DigitalPin.P15;  
       const DHT11_TIMEOUT = 100;
       const buffer = pins.createBuffer(40);
       const data = [0, 0, 0, 0, 0];
