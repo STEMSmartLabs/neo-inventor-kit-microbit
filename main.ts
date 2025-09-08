@@ -49,7 +49,7 @@ namespace neoinventor {
         OLED12864_I2C.init(60)             // 60=0x3C; use 61 for 0x3D panels
         OLED12864_I2C.clear()        
         pins.digitalWritePin(LED_PIN, 0)
-        connectIrReceiver()
+        connectIrReceiver(IrProtocol.NEC)
     }
 
     // ===== Servo =====
