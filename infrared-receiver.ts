@@ -245,7 +245,7 @@ namespace neoinventor {
       return;
     }
 
-    DigitalPin pin = DigitalPin.P9;
+    const pin =  DigitalPin.P9;
     irState.protocol = protocol;
 
     enableIrMarkSpaceDetection(pin);
