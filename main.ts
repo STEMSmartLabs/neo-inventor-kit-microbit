@@ -30,7 +30,7 @@ namespace neoinventor {
     // ===== Fixed mapping =====
     const SERVO_PIN: AnalogPin = AnalogPin.P2
     const NEO_PIN: DigitalPin = DigitalPin.P12
-    const NEO_COUNT: number = 16   // change if your ring has different LED count
+    const NEO_COUNT: number = 8   // change if your ring has different LED count
     const FAN_PIN: AnalogPin = AnalogPin.P7
     const LED_PIN: DigitalPin = DigitalPin.P8
     const LDR_PIN: AnalogPin = AnalogPin.P1

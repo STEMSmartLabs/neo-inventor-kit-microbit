@@ -12,6 +12,7 @@
     "README.md",
     "main.ts",
     "dht11.ts",
+    "background.ts",
     "infrared-receiver.ts"
   ],
   "testFiles": [
