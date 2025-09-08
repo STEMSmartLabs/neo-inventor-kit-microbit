@@ -1,100 +1,126 @@
-// dht11.ts — DHT11 (no external library), fixed to P15
-// Adds DHT11 temperature/humidity blocks under the "Neo Inventor Kit" category
-// by using the same `namespace neoinventor` as your main.ts.
-
 namespace neoinventor {
-    // Fixed data pin for your kit
-    const DHT_PIN: DigitalPin = DigitalPin.P15
-
-    // Throttle reads: DHT11 requires ≥1s between queries
-    let __dhtLast = 0
-    function __dhtEnsureInterval(): void {
-        const since = input.runningTime() - __dhtLast
-        const wait = 1100 - since
-        if (wait > 0) basic.pause(wait)
-        __dhtLast = input.runningTime()
+  /**
+   * DHT11
+   */
+  //% subcategory="DHT11" color=#3eb0e0 icon="\uf2c9" weight=1
+  export namespace dht11 {
+    export enum DHT11Type {
+      //% block="temperature(℃)"
+      TemperatureC = 0,
+      //% block="temperature(℉)"
+      TemperatureF = 1,
+      //% block="humidity(0~100%)"
+      Humidity = 2
     }
+
+    const DHT_PIN: DigitalPin = DigitalPin.P15
+    let dht11Humidity = 0;
+    let dht11Temperature = 0;
 
     /**
-     * Low-level DHT11 read: returns 5 raw bytes or [-1,...] on error.
-     * Order: [humInt, humDec, tempInt, tempDec, checksum]
+     * get dht11 temperature and humidity Value
+     * @param valueType Select temperature(℃/℉) value or humidity percentage
      */
-    //% blockHidden=true
-    export function __dht11ReadRawBytes(): number[] {
-        __dhtEnsureInterval()
+    //% block="Temp & Humidity  %valueType"
+    //% tooltip="Reads the temperature or humidity from a DHT11 sensor"
+      export function dht11value(valueType: DHT11Type): number {
+      const DigitalPin pin = DHT_PIN;  
+      const DHT11_TIMEOUT = 100;
+      const buffer = pins.createBuffer(40);
+      const data = [0, 0, 0, 0, 0];
+      let startTime = control.micros();
 
-        const pin = DHT_PIN
-        let data = [0, 0, 0, 0, 0]
+      if (control.hardwareVersion().slice(0, 1) !== "1") {
+        // V2
+        // V2 bug
+        pins.digitalReadPin(DigitalPin.P0);
+        pins.digitalReadPin(DigitalPin.P1);
+        pins.digitalReadPin(DigitalPin.P2);
+        pins.digitalReadPin(DigitalPin.P3);
+        pins.digitalReadPin(DigitalPin.P4);
+        pins.digitalReadPin(DigitalPin.P10);
 
-        // 1) Idle high via pull-up
-        pins.setPull(pin, PinPullMode.PullUp)
+        // 1.start signal
+        pins.digitalWritePin(pin, 0);
+        basic.pause(18);
 
-        // 2) Start signal: drive LOW ≥18ms to wake DHT11
-        pins.digitalWritePin(pin, 0)
-        basic.pause(20)
+        // 2.pull up and wait 40us
+        pins.setPull(pin, PinPullMode.PullUp);
+        pins.digitalReadPin(pin);
+        control.waitMicros(40);
 
-        // 3) Release HIGH for ~30µs while still output
-        pins.digitalWritePin(pin, 1)
-        control.waitMicros(30)
-
-        // 4) Switch to INPUT so sensor can drive the line
-        pins.setPull(pin, PinPullMode.PullUp)
-        pins.digitalReadPin(pin) // ensure input mode
-
-        // 5) Sensor response: ~80µs LOW, then ~80µs HIGH
-        if (pins.pulseIn(pin, PulseValue.Low, 150000) == 0) return [-1,-1,-1,-1,-1]
-        if (pins.pulseIn(pin, PulseValue.High, 150000) == 0) return [-1,-1,-1,-1,-1]
-
-        // 6) Read 40 bits: 50µs LOW + (≈26–28µs HIGH = 0) or (≈70µs HIGH = 1)
-        for (let i = 0; i < 40; i++) {
-            if (pins.pulseIn(pin, PulseValue.Low, 150000) == 0) return [-1,-1,-1,-1,-1]
-            const hi = pins.pulseIn(pin, PulseValue.High, 150000)
-            if (hi == 0) return [-1,-1,-1,-1,-1]
-            const bit = hi > 48 ? 1 : 0 // ~48µs threshold works well on micro:bit
-            const byteIndex = Math.idiv(i, 8)
-            data[byteIndex] = (data[byteIndex] << 1) | bit
+        // 3.read data
+        startTime = control.micros();
+        while (pins.digitalReadPin(pin) === 0) {
+          if (control.micros() - startTime > DHT11_TIMEOUT) break;
+        }
+        startTime = control.micros();
+        while (pins.digitalReadPin(pin) === 1) {
+          if (control.micros() - startTime > DHT11_TIMEOUT) break;
         }
 
-        // 7) Verify checksum (sum of first 4 bytes, LSB)
-        const sum = (data[0] + data[1] + data[2] + data[3]) & 0xFF
-        if (sum != data[4]) return [-1,-1,-1,-1,-1]
+        for (let dataBits = 0; dataBits < 40; dataBits++) {
+          startTime = control.micros();
+          while (pins.digitalReadPin(pin) === 1) {
+            if (control.micros() - startTime > DHT11_TIMEOUT) break;
+          }
+          startTime = control.micros();
+          while (pins.digitalReadPin(pin) === 0) {
+            if (control.micros() - startTime > DHT11_TIMEOUT) break;
+          }
+          control.waitMicros(28);
+          if (pins.digitalReadPin(pin) === 1) {
+            buffer[dataBits] = 1;
+          }
+        }
+      } else {
+        // V1
+        // 1.start signal
+        pins.digitalWritePin(pin, 0);
+        basic.pause(18);
 
-        return data
+        // 2.pull up and wait 40us
+        pins.setPull(pin, PinPullMode.PullUp);
+        pins.digitalReadPin(pin);
+        control.waitMicros(40);
+
+        // 3.read data
+        if (pins.digitalReadPin(pin) === 0) {
+          while (pins.digitalReadPin(pin) === 0);
+          while (pins.digitalReadPin(pin) === 1);
+
+          for (let dataBits = 0; dataBits < 40; dataBits++) {
+            while (pins.digitalReadPin(pin) === 1);
+            while (pins.digitalReadPin(pin) === 0);
+            control.waitMicros(28);
+            if (pins.digitalReadPin(pin) === 1) {
+              buffer[dataBits] = 1;
+            }
+          }
+        }
+      }
+
+      for (let i = 0; i < 5; i++) {
+        for (let j = 0; j < 8; j++) {
+          if (buffer[8 * i + j] === 1) {
+            data[i] += 2 ** (7 - j);
+          }
+        }
+      }
+
+      if (((data[0] + data[1] + data[2] + data[3]) & 0xff) === data[4]) {
+        dht11Humidity = data[0] + data[1] * 0.1;
+        dht11Temperature = data[2] + data[3] * 0.1;
+      }
+
+      switch (valueType) {
+        case DHT11Type.TemperatureC:
+            return Math.round(dht11Temperature);
+        case DHT11Type.TemperatureF:
+            return Math.round(dht11Temperature * 1.8 + 32);
+        case DHT11Type.Humidity:
+            return Math.round(dht11Humidity);
+      }
     }
-
-    // ========== Friendly blocks ==========
-
-    //% block="DHT11 temperature (°C)"
-    //% weight=77 blockGap=8
-    export function dht11TemperatureC(): number {
-        const d = __dht11ReadRawBytes()
-        return d[0] < 0 ? -999 : (d[2] + d[3] / 10)
-    }
-
-    //% block="DHT11 humidity (%%)"
-    //% weight=75 blockGap=12
-    export function dht11HumidityPercent(): number {
-        const d = __dht11ReadRawBytes()
-        return d[0] < 0 ? -999 : (d[0] + d[1] / 10)
-    }
-
-    export enum Dht11Part {
-        //% block="humidity integer"
-        HumidityInteger = 0,
-        //% block="humidity decimal"
-        HumidityDecimal = 1,
-        //% block="temperature integer"
-        TemperatureInteger = 2,
-        //% block="temperature decimal"
-        TemperatureDecimal = 3,
-        //% block="checksum"
-        Checksum = 4
-    }
-
-    //% block="DHT11 raw %part"
-    //% weight=73 blockGap=8
-    export function dht11Raw(part: Dht11Part): number {
-        const d = __dht11ReadRawBytes()
-        return d[0] < 0 ? -1 : d[part]
-    }
+  }
 }

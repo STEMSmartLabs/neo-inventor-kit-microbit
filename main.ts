@@ -32,7 +32,6 @@ namespace neoinventor {
     const NEO_PIN: DigitalPin = DigitalPin.P12
     const NEO_COUNT: number = 16   // change if your ring has different LED count
     const FAN_PIN: AnalogPin = AnalogPin.P7
-    const DHT_PIN: DigitalPin = DigitalPin.P15
     const LED_PIN: DigitalPin = DigitalPin.P8
     const IR_PIN: DigitalPin = DigitalPin.P9
     const LDR_PIN: AnalogPin = AnalogPin.P1
