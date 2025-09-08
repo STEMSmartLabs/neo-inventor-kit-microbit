@@ -2,7 +2,6 @@ namespace neoinventor {
   /**
    * DHT11
    */
-  //% subcategory="DHT11" color=#3eb0e0 icon="\uf2c9" weight=1
   export namespace dht11 {
     export enum DHT11Type {
       //% block="temperature(℃)"

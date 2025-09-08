@@ -33,7 +33,6 @@ namespace neoinventor {
     const NEO_COUNT: number = 16   // change if your ring has different LED count
     const FAN_PIN: AnalogPin = AnalogPin.P7
     const LED_PIN: DigitalPin = DigitalPin.P8
-    const IR_PIN: DigitalPin = DigitalPin.P9
     const LDR_PIN: AnalogPin = AnalogPin.P1
     const ULTRA_TRIG: DigitalPin = DigitalPin.P13
     const ULTRA_ECHO: DigitalPin = DigitalPin.P14
@@ -170,14 +169,6 @@ namespace neoinventor {
         __ensureInit()
         const v = pins.analogReadPin(TRIMPOT_PIN)
         return Math.map(v, 0, 1023, 0, 100)
-    }
-
-    // ===== IR (raw level only; use an IR extension for decoding) =====
-    //% block="IR level"
-    //% weight=70 blockGap=12
-    export function irLevel(): number {
-        __ensureInit()
-        return pins.digitalReadPin(IR_PIN)
     }
 
     // ===== Legacy pin-parameter APIs (hidden) =====
