@@ -1,11 +1,11 @@
 {
   "name": "Neo Inventor Kit Microbit",
-  "version": "0.1.9",
+  "version": "0.2.0",
+  "icon": "https://raw.githubusercontent.com/STEMSmartLabs/neo-inventor-kit-microbit/master/icon.png",
   "description": "Neo Inventor Kit for micro:bit \u2014 blocks for servo, NeoPixel ring, ultrasonic, fan, buzzer, OLED, and more.",
   "license": "MIT",
   "dependencies": {
     "core": "*",
-    "neopixel": "github:microsoft/pxt-neopixel",
     "OLED12864_I2C": "github:makecode-extensions/oled12864_i2c"
   },
   "files": [
@@ -13,7 +13,8 @@
     "main.ts",
     "dht11.ts",
     "background.ts",
-    "infrared-receiver.ts"
+    "infrared-receiver.ts",
+    "neopixel.ts"
   ],
   "testFiles": [
     "tests/test.ts"
