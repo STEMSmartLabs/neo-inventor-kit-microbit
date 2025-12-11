@@ -1,11 +1,12 @@
 {
   "name": "Neo Inventor Kit Microbit",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "icon": "https://raw.githubusercontent.com/STEMSmartLabs/neo-inventor-kit-microbit/master/icon.png",
   "description": "Neo Inventor Kit for micro:bit \u2014 blocks for servo, NeoPixel ring, ultrasonic, fan, buzzer, OLED, and more.",
   "license": "MIT",
   "dependencies": {
     "core": "*",
+    "ws2812b": "github:microsoft/pxt-ws2812b#v0.1.1",    
     "OLED12864_I2C": "github:makecode-extensions/oled12864_i2c"
   },
   "files": [
