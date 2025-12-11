@@ -62,38 +62,39 @@ namespace neoinventor {
     }
 
     // ===== NeoPixel =====
-    let __ring: neopixel.Strip = null
+    // let __ring: neopixel.Strip = null
 
-    /**
-     * Get the NeoPixel ring on the fixed pin.
-     */
-    //% block="Neo ring"
-    //% weight=98 blockGap=8
-    export function ring(): neopixel.Strip {
-        __ensureInit()
-        if (!__ring) __ring = neopixel.create(NEO_PIN, NEO_COUNT, NeoPixelMode.RGB)
-        return __ring
-    }
+    // /**
+    //  * Get the NeoPixel ring on the fixed pin.
+    //  */
+    // //% block="Neo ring"
+    // //% weight=98 blockGap=8
+    // export function ring(): neopixel.Strip {
+    //     __ensureInit()
+    //     if (!__ring) __ring = neopixel.create(NEO_PIN, NEO_COUNT, NeoPixelMode.RGB)
+    //     return __ring
+    // }
 
-    // Helper: rainbow on the fixed ring
-    //% block="ring rainbow"
-    //% weight=97 blockGap=12
-    export function ringRainbow(): void {
-        __ensureInit()
-        ring().showRainbow(1, 360)
-    }
+    // // Helper: rainbow on the fixed ring
+    // //% block="ring rainbow"
+    // //% weight=97 blockGap=12
+    // export function ringRainbow(): void {
+    //     __ensureInit()
+    //     ring().showRainbow(1, 360)
+    // }
 
 
-    /**
-     * Turn off all LEDs.
-     */
-    //% blockId="neopixel_clear" block="%ring clear"
-    //% weight=76
-export function clear(): void {
-        __ensureInit()
-        ring().clear()
-        ring().show()
-    }
+//     /**
+//      * Turn off all LEDs.
+//      */
+//     // Helper: turnoff all leds
+//     //% block="ring clear"
+//     //% weight=76
+// export function ringClear(): void {
+//         __ensureInit()
+//         ring().clear()
+//         ring().show()
+//     }
 
     // ===== Ultrasonic (HC-SR04 style) =====
     /**
