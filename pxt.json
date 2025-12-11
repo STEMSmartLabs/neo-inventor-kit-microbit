@@ -1,7 +1,7 @@
 {
   "name": "neo-inventor-kit-microbit",
-  "version": "0.1.7",
-  "description": "Neo Inventor Kit for micro:bit — fixed-pin blocks (P2 servo, P12 NeoPixel, P7 fan, P13/P14 ultrasonic, P10 buzzer, P8 LED, P1 LDR, P3 button, P4 switch, P0 trimpot, P15 humidity) + OLED dependency.",
+  "version": "0.1.8",
+  "description": "Neo Inventor Kit for micro:bit \u2014 blocks for servo, NeoPixel ring, ultrasonic, fan, buzzer, OLED, and more.",
   "license": "MIT",
   "dependencies": {
     "core": "*",
