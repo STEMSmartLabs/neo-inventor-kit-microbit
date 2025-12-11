@@ -499,6 +499,15 @@
             }
         }
 
+        //% subcategory="Ring"
+        //% blockId="neoinventor_ring" block="Neo ring (P12, 8 LEDs)"
+        //% weight=95 blockGap=8
+        export function ring(): Strip {
+        const strip = create(DigitalPin.P12, 8, NeoPixelMode.RGB)
+        strip.setBrightness(128)
+        return strip
+        }        
+
         /**
          * Create a new NeoPixel driver for `numleds` LEDs.
          * @param pin the pin where the neopixel is connected.
@@ -510,6 +519,9 @@
         //% parts="neopixel"
         //% trackArgs=0,2
         //% blockSetVariable=strip
+        //% pin.defl=DigitalPin.P12
+        //% numleds.defl=8
+        //% mode.defl=NeoPixelMode.RGB
         export function create(pin: DigitalPin, numleds: number, mode: NeoPixelMode): Strip {
             let strip = new Strip();
             let stride = mode === NeoPixelMode.RGBW ? 4 : 3;

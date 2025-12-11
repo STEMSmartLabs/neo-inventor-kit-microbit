@@ -41,6 +41,8 @@ namespace neoinventor {
     const TRIMPOT_PIN: AnalogPin = AnalogPin.P0
     const SWITCH_PIN: DigitalPin = DigitalPin.P4
 
+    let strip = neoinventor.create(NEO_PIN, 8, NeoPixelMode.RGB)
+
     // ===== Optional: a visible "Initialize kit" block =====
     //% block="initialize Neo Inventor Kit"
     //% weight=110 blockGap=12
@@ -50,6 +52,7 @@ namespace neoinventor {
         OLED12864_I2C.clear()        
         pins.digitalWritePin(LED_PIN, 0)
         connectIrReceiver(IrProtocol.NEC)
+
     }
 
     // ===== Servo =====
