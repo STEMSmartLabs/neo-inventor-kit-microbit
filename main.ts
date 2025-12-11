@@ -83,6 +83,18 @@ namespace neoinventor {
         ring().showRainbow(1, 360)
     }
 
+
+    /**
+     * Turn off all LEDs.
+     */
+    //% blockId="neopixel_clear" block="%ring clear"
+    //% weight=76
+export function clear(): void {
+        __ensureInit()
+        ring().clear()
+        ring().show()
+    }
+
     // ===== Ultrasonic (HC-SR04 style) =====
     /**
      * Read ultrasonic distance in centimeters using fixed TRIG/ECHO pins.
