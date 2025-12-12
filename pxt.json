@@ -15,7 +15,8 @@
     "dht11.ts",
     "background.ts",
     "infrared-receiver.ts",
-    "neopixel.ts"
+    "neopixel.ts",
+    "icon.png"
   ],
   "testFiles": [
     "tests/test.ts"
